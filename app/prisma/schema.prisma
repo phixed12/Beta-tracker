@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enumerations ────────────────────────────────────────────────────────────
+
+enum BetaStatus {
+  draft
+  recruiting
+  outreach_sent
+  full
+  in_progress
+  closing
+  closed
+}
+
+enum CloseReason {
+  completed
+  cancelled
+  merged
+  paused
+}
+
+enum HealthStatus {
+  green
+  yellow
+  red
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum TesterStatus {
+  nominated
+  csm_pending
+  csm_approved
+  outreach_sent
+  confirmed
+  active
+  completed
+  dropped
+  cancelled
+}
+
+enum BatchStatus {
+  pending
+  ready
+  sent
+}
+
+enum UserRole {
+  pm
+  pmm
+  csm
+  coordinator
+  admin
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  role          UserRole
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  accounts Account[]
+  sessions Session[]
+
+  ownedBetasPM        BetaFeature[]    @relation("OwnerPM")
+  ownedBetasPMM       BetaFeature[]    @relation("OwnerPMM")
+  assignedEnrollments BetaEnrollment[] @relation("AssignedBy")
+  approvedEnrollments BetaEnrollment[] @relation("ApprovedBy")
+  ownedClients        Client[]
+  sentBatches         OutreachBatch[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+// NextAuth v5 tables
+model Account {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model BetaFeature {
+  id                  String       @id @default(uuid())
+  name                String
+  ownerPmId           String       @map("owner_pm")
+  ownerPmmId          String       @map("owner_pmm")
+  targetTesterCount   Int          @default(15) @map("target_tester_count")
+  status              BetaStatus   @default(draft)
+  startDate           DateTime     @map("start_date") @db.Date
+  closedAt            DateTime?    @map("closed_at")
+  closeReason         CloseReason? @map("close_reason")
+  closeNotes          String?      @map("close_notes")
+  idealClientCriteria String?      @map("ideal_client_criteria")
+  outreachDeadline    DateTime     @map("outreach_deadline") @db.Date
+  clonedFromId        String?      @map("cloned_from")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  ownerPm     User            @relation("OwnerPM", fields: [ownerPmId], references: [id])
+  ownerPmm    User            @relation("OwnerPMM", fields: [ownerPmmId], references: [id])
+  clonedFrom  BetaFeature?    @relation("ClonedFrom", fields: [clonedFromId], references: [id])
+  clones      BetaFeature[]   @relation("ClonedFrom")
+  enrollments BetaEnrollment[]
+
+  @@map("beta_features")
+}
+
+model Client {
+  id               String       @id @default(uuid())
+  name             String
+  csmOwnerId       String       @map("csm_owner")
+  tier             Int
+  accountHealth    HealthStatus @default(green) @map("account_health")
+  outreachLock     Boolean      @default(false) @map("outreach_lock")
+  lastOutreachDate DateTime?    @map("last_outreach_date") @db.Date
+  notes            String?
+  crmId            String?      @map("crm_id")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  csmOwner    User             @relation(fields: [csmOwnerId], references: [id])
+  enrollments BetaEnrollment[]
+  batches     OutreachBatch[]
+
+  @@map("clients")
+}
+
+model BetaEnrollment {
+  id                 String         @id @default(uuid())
+  clientId           String         @map("client_id")
+  featureId          String         @map("feature_id")
+  assignedById       String         @map("assigned_by")
+  isOverflow         Boolean        @default(false) @map("is_overflow")
+  csmApprovalStatus  ApprovalStatus @default(pending) @map("csm_approval_status")
+  csmApprovedById    String?        @map("csm_approved_by")
+  csmApprovedAt      DateTime?      @map("csm_approved_at")
+  csmRejectionReason String?        @map("csm_rejection_reason")
+  testerStatus       TesterStatus   @default(nominated) @map("tester_status")
+  outreachSentAt     DateTime?      @map("outreach_sent_at")
+  confirmedAt        DateTime?      @map("confirmed_at")
+  completedAt        DateTime?      @map("completed_at")
+  droppedAt          DateTime?      @map("dropped_at")
+  dropReason         String?        @map("drop_reason")
+  feedbackSubmitted  Boolean        @default(false) @map("feedback_submitted")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  client        Client                    @relation(fields: [clientId], references: [id])
+  feature       BetaFeature               @relation(fields: [featureId], references: [id])
+  assignedBy    User                      @relation("AssignedBy", fields: [assignedById], references: [id])
+  csmApprovedBy User?                     @relation("ApprovedBy", fields: [csmApprovedById], references: [id])
+  batchEntries  OutreachBatchEnrollment[]
+
+  @@unique([clientId, featureId])
+  @@map("beta_enrollments")
+}
+
+model OutreachBatch {
+  id          String      @id @default(uuid())
+  clientId    String      @map("client_id")
+  batchStatus BatchStatus @default(pending) @map("batch_status")
+  sentAt      DateTime?   @map("sent_at")
+  sentById    String?     @map("sent_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  client      Client                    @relation(fields: [clientId], references: [id])
+  sentBy      User?                     @relation(fields: [sentById], references: [id])
+  enrollments OutreachBatchEnrollment[]
+
+  @@map("outreach_batches")
+}
+
+model OutreachBatchEnrollment {
+  batchId      String @map("batch_id")
+  enrollmentId String @map("enrollment_id")
+
+  batch      OutreachBatch  @relation(fields: [batchId], references: [id])
+  enrollment BetaEnrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@id([batchId, enrollmentId])
+  @@map("outreach_batch_enrollments")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  action      String
+  changedById String   @map("changed_by")
+  priorState  Json?    @map("prior_state")
+  nextState   Json?    @map("next_state")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  changedBy User @relation(fields: [changedById], references: [id])
+
+  @@map("audit_logs")
+}
