@@ -7,8 +7,7 @@ export async function POST(
   req: NextRequest,
   ctx: RouteContext<"/api/features/[id]/close">
 ) {
-  const { error, session } = await requireAuth(["pm", "pmm", "coordinator", "admin"]);
-  if (error) return error;
+  const { session } = await requireAuth();
 
   const { id } = await ctx.params;
   const body = await req.json();

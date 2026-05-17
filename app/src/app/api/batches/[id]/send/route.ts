@@ -6,8 +6,7 @@ export async function POST(
   req: NextRequest,
   ctx: RouteContext<"/api/batches/[id]/send">
 ) {
-  const { error, session } = await requireAuth(["coordinator", "admin"]);
-  if (error) return error;
+  const { session } = await requireAuth();
 
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({}));

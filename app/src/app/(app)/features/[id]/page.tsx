@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BetaStatusBadge, TesterStatusBadge, ApprovalStatusBadge } from "@/components/StatusBadge";
@@ -15,7 +15,7 @@ export default async function FeatureDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await auth();
+  
 
   const [feature, allClients] = await Promise.all([
     prisma.betaFeature.findUnique({
@@ -64,7 +64,7 @@ export default async function FeatureDetailPage({
   ).length;
   const csmPending = feature.enrollments.filter((e) => e.csmApprovalStatus === "pending").length;
 
-  const canNominate = ["pm","pmm","coordinator","admin"].includes(session?.user.role ?? "");
+  const canNominate = true;
   const isClosed = feature.status === "closed" || feature.status === "closing";
 
   return (
@@ -124,7 +124,7 @@ export default async function FeatureDetailPage({
             <tbody className="divide-y divide-gray-50">
               {feature.enrollments.map((e) => {
                 const preOutreach = ["nominated","csm_pending","csm_approved"].includes(e.testerStatus);
-                const isCsmForClient = session?.user.role === "csm";
+                const isCsmForClient = true;
                 const isApprovalPending = e.csmApprovalStatus === "pending";
 
                 return (
@@ -157,7 +157,7 @@ export default async function FeatureDetailPage({
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      {isApprovalPending && (isCsmForClient || ["coordinator","admin"].includes(session?.user.role ?? "")) ? (
+                      {isApprovalPending && (isCsmForClient || true) ? (
                         <ApproveRejectButtons enrollmentId={e.id} />
                       ) : preOutreach && canNominate ? (
                         <RemoveEnrollmentButton enrollmentId={e.id} />

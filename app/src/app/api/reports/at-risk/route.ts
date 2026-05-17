@@ -6,8 +6,7 @@ const STALE_APPROVAL_HOURS = 48;
 const UNDERFILL_WARNING_DAYS = 5;
 
 export async function GET(_req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const now = new Date();
 

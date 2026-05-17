@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import type { UserRole } from "@/generated/prisma/client";
 
 export function ok(data: unknown, status = 200) {
@@ -9,13 +9,24 @@ export function err(message: string, status = 400) {
   return Response.json({ error: message }, { status });
 }
 
-export async function requireAuth(allowedRoles?: UserRole[]) {
-  const session = await auth();
-  if (!session?.user?.id) return { error: err("Unauthorized", 401) };
-  if (allowedRoles && !allowedRoles.includes(session.user.role as UserRole)) {
-    return { error: err("Forbidden", 403) };
-  }
-  return { session: session as typeof session & { user: { id: string; role: UserRole } } };
+// Returns the first admin user as the acting user for all operations.
+// No authentication — anyone with the link can use this tool.
+let cachedActorId: string | null = null;
+async function getActorId(): Promise<string> {
+  if (cachedActorId) return cachedActorId;
+  const admin = await prisma.user.findFirst({ where: { role: "admin" }, select: { id: true } });
+  if (!admin) throw new Error("No admin user found. Run npm run db:seed first.");
+  cachedActorId = admin.id;
+  return cachedActorId;
+}
+
+export async function requireAuth(_allowedRoles?: UserRole[]) {
+  const actorId = await getActorId();
+  return {
+    session: {
+      user: { id: actorId, role: "admin" as UserRole },
+    },
+  };
 }
 
 export function parsePagination(url: URL) {

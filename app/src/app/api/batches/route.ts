@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ok, requireAuth, parsePagination } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { skip, take } = parsePagination(req.nextUrl);
 

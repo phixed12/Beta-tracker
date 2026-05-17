@@ -1,7 +1,9 @@
+import { Fragment } from "react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { HealthDot } from "@/components/HealthDot";
 import { BetaStatusBadge } from "@/components/StatusBadge";
+import { ClientFilters } from "@/components/ClientFilters";
 import type { HealthStatus } from "@/generated/prisma/client";
 
 export const metadata = { title: "Clients — Beta Tracker" };
@@ -60,38 +62,7 @@ export default async function ClientsPage({
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-gray-900">Clients</h1>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 text-sm">
-        <select
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm bg-white"
-          defaultValue={health ?? ""}
-          onChange={(e) => {
-            const url = new URL(window.location.href);
-            if (e.target.value) url.searchParams.set("health", e.target.value);
-            else url.searchParams.delete("health");
-            window.location.href = url.toString();
-          }}
-        >
-          <option value="">All health</option>
-          <option value="green">Green</option>
-          <option value="yellow">Yellow</option>
-          <option value="red">Red</option>
-        </select>
-
-        <select
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm bg-white"
-          defaultValue={csmId ?? ""}
-          onChange={(e) => {
-            const url = new URL(window.location.href);
-            if (e.target.value) url.searchParams.set("csm", e.target.value);
-            else url.searchParams.delete("csm");
-            window.location.href = url.toString();
-          }}
-        >
-          <option value="">All CSMs</option>
-          {csms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
+      <ClientFilters csms={csms} currentHealth={health ?? ""} currentCsm={csmId ?? ""} />
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -108,8 +79,8 @@ export default async function ClientsPage({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {clients.map((c) => (
-              <>
-                <tr key={c.id} className="hover:bg-gray-50">
+              <Fragment key={c.id}>
+                <tr className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <HealthDot health={c.accountHealth} />
@@ -161,7 +132,7 @@ export default async function ClientsPage({
 
                 {/* Expanded history panel */}
                 {expandId === c.id && expandedClient && (
-                  <tr key={`${c.id}-expanded`}>
+                  <tr>
                     <td colSpan={6} className="bg-gray-50 px-6 py-4">
                       <p className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Participation history · {expandedClient.enrollments.length} total
@@ -184,7 +155,7 @@ export default async function ClientsPage({
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>

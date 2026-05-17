@@ -4,8 +4,7 @@ import { ok, requireAuth, parseDateRange, parsePagination } from "@/lib/api-help
 import type { Client, BetaEnrollment } from "@/generated/prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { from, to } = parseDateRange(req.nextUrl);
   const { skip, take } = parsePagination(req.nextUrl);

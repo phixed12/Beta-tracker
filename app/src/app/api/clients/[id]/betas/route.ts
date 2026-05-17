@@ -6,8 +6,7 @@ export async function GET(
   req: NextRequest,
   ctx: RouteContext<"/api/clients/[id]/betas">
 ) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { id } = await ctx.params;
   const { skip, take } = parsePagination(req.nextUrl);

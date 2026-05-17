@@ -7,8 +7,7 @@ export async function DELETE(
   _req: NextRequest,
   ctx: RouteContext<"/api/enrollments/[id]">
 ) {
-  const { error, session } = await requireAuth(["pm", "pmm", "coordinator", "admin"]);
-  if (error) return error;
+  const { session } = await requireAuth();
 
   const { id } = await ctx.params;
   const enrollment = await prisma.betaEnrollment.findUnique({ where: { id } });

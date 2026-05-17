@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ok, requireAuth, parseDateRange } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { from, to } = parseDateRange(req.nextUrl);
   const dateFilter = from || to

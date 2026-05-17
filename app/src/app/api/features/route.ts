@@ -4,8 +4,7 @@ import { ok, err, requireAuth, parsePagination } from "@/lib/api-helpers";
 import type { BetaStatus } from "@/generated/prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const url = req.nextUrl;
   const { skip, take } = parsePagination(url);
@@ -39,8 +38,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth(["pm", "pmm", "coordinator", "admin"]);
-  if (error) return error;
+  const { session } = await requireAuth();
 
   const body = await req.json();
   const { name, ownerPmId, ownerPmmId, startDate, outreachDeadline, idealClientCriteria, targetTesterCount } = body;

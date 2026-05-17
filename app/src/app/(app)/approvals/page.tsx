@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+
 import { HealthDot } from "@/components/HealthDot";
 import { ApproveRejectButtons } from "@/components/EnrollmentActions";
 import Link from "next/link";
@@ -12,15 +12,15 @@ export default async function ApprovalsPage({
   searchParams: Promise<{ all?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const session = await auth();
-  const showAll = params.all === "1" || ["coordinator","admin"].includes(session?.user.role ?? "");
+  
+  const showAll = true;
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
   const take = 30;
   const skip = (page - 1) * take;
 
   const where = {
     csmApprovalStatus: "pending" as const,
-    ...(showAll ? {} : { client: { csmOwnerId: session?.user.id! } }),
+    // open access — show all
   };
 
   const [enrollments, total] = await Promise.all([
@@ -59,7 +59,7 @@ export default async function ApprovalsPage({
             {!showAll && " for your clients"}
           </p>
         </div>
-        {["coordinator","admin"].includes(session?.user.role ?? "") && (
+        {(
           <Link
             href={showAll ? "/approvals" : "/approvals?all=1"}
             className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"

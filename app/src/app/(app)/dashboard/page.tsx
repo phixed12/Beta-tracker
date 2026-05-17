@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+
 import Link from "next/link";
 import { BetaStatusBadge } from "@/components/StatusBadge";
 import { SlotFill } from "@/components/SlotFill";

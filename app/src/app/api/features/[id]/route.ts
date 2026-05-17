@@ -6,8 +6,7 @@ export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/features/[id]">
 ) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { id } = await ctx.params;
 
@@ -34,8 +33,7 @@ export async function PUT(
   req: NextRequest,
   ctx: RouteContext<"/api/features/[id]">
 ) {
-  const { error } = await requireAuth(["pm", "pmm", "coordinator", "admin"]);
-  if (error) return error;
+  await requireAuth();
 
   const { id } = await ctx.params;
   const body = await req.json();

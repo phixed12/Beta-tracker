@@ -6,8 +6,7 @@ export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/batches/[id]">
 ) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  await requireAuth();
 
   const { id } = await ctx.params;
 

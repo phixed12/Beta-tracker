@@ -6,8 +6,7 @@ export async function POST(
   _req: NextRequest,
   ctx: RouteContext<"/api/enrollments/[id]/approve">
 ) {
-  const { error, session } = await requireAuth(["csm", "coordinator", "admin"]);
-  if (error) return error;
+  const { session } = await requireAuth();
 
   const { id } = await ctx.params;
 
